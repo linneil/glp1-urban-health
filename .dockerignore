@@ -1,0 +1,16 @@
+.git
+.gitignore
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+*.egg-info
+.venv
+venv
+.env
+data/raw/*
+data/*.duckdb
+data/*.duckdb.wal
+.DS_Store
+*.md
+!README.md

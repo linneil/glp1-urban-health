@@ -1,0 +1,120 @@
+Metadata-Version: 2.4
+Name: glp1-urban-health
+Version: 0.1.0
+Summary: Analysing the relationship between GLP-1 drug approvals and US state-level obesity trends
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: duckdb>=1.1.0
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: pandas>=2.2.0
+Requires-Dist: pyarrow>=17.0.0
+Requires-Dist: streamlit>=1.38.0
+Requires-Dist: plotly>=5.24.0
+Requires-Dist: scipy>=1.14.0
+Requires-Dist: python-dotenv>=1.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3.0; extra == "dev"
+Requires-Dist: ruff>=0.6.0; extra == "dev"
+
+# GLP-1 × Urban Health
+
+Analysing the relationship between FDA GLP-1 receptor agonist drug approvals and US state-level obesity trends.
+
+## Research Question
+
+> Do states with greater GLP-1 clinical trial density show different obesity rate trajectories after key drug approvals (Wegovy 2021, Zepbound 2023)?
+
+**This is an ecological correlation study — not a causal analysis.** State-level associations cannot establish individual-level causation due to confounders (income, insurance access, state health policy, demographics).
+
+## Key Findings
+
+- **1,360 unique GLP-1 clinical trials** across all 50 US states (12,766 trial-location pairs)
+- States with more GLP-1 trials show a **statistically significant negative correlation** with obesity slope change (Pearson r = −0.33, p = 0.02)
+- The strongest confounding variable is **median household income** (r = +0.25, p = 0.08)
+
+## Architecture
+
+```
+APIs → Raw Parquet → DuckDB (staging + mart) → Streamlit Dashboard
+```
+
+### Data Sources
+
+| Source | Records | Content |
+|--------|---------|---------|
+| OpenFDA API | 27 | GLP-1 drug approval milestones |
+| ClinicalTrials.gov API v2 | 12,766 | Trial-location pairs across the US |
+| CDC BRFSS (Socrata) | 728 | State-year obesity prevalence 2011–2023 |
+| US Census ACS | 520 | State-year income and insurance rates |
+
+### Tech Stack
+
+- **Python 3.11+** — httpx, pandas, scipy
+- **DuckDB** — analytical database (staging → mart layers)
+- **Streamlit + Plotly** — interactive dashboard
+- **pytest** — data validation tests
+
+## Quick Start
+
+### Option A: Conda (Recommended)
+
+```bash
+# Create and activate a dedicated conda environment
+conda create -n glp1-dashboard python=3.11 -y
+conda activate glp1-dashboard
+
+# Install project dependencies
+pip install -e ".[dev]"
+
+# Run the full pipeline (ingest → transform → analyse)
+python pipelines/run_pipeline.py
+
+# Launch the dashboard
+streamlit run dashboard/app.py
+```
+
+### Option B: Docker
+
+```bash
+# Build the image
+docker build -t glp1-dashboard .
+
+# Run the pipeline (fetches data + builds DuckDB)
+docker run glp1-dashboard python pipelines/run_pipeline.py
+
+# Launch the dashboard at http://localhost:8501
+docker run -p 8501:8501 glp1-dashboard
+```
+
+## Dashboard
+
+Four interactive tabs:
+
+1. **GLP-1 Approval Timeline** — drug milestones overlaid on national obesity trend
+2. **State Obesity Map** — choropleth with year slider (2011–2023)
+3. **Correlation Analysis** — trial density vs. obesity slope change scatter plot
+4. **Clinical Trial Map** — geographic distribution of GLP-1 trials
+
+## Project Structure
+
+```
+src/
+  ingestion/          # API clients (OpenFDA, ClinicalTrials, CDC, Census)
+  transforms/         # Raw → DuckDB staging → mart layer
+  db/schema.sql       # Full DuckDB schema definition
+  analysis/           # Statistical correlation computation
+pipelines/            # One-command pipeline runner
+dashboard/            # Streamlit application
+tests/                # Data validation tests
+```
+
+## Data Limitations
+
+- **BRFSS obesity rates are self-reported** — known to underestimate true prevalence
+- **Ecological fallacy risk** — state-level patterns may not reflect individual outcomes
+- **Census data** — seed data is used when API is unreachable; replace with live ACS data for production
+- **Trial density ≠ drug access** — clinical trial presence is a proxy, not a direct measure of prescriptions
+
+## License
+
+MIT
