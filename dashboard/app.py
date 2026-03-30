@@ -9,7 +9,8 @@ import plotly.graph_objects as go
 import streamlit as st
 from scipy import stats
 
-DB_PATH = Path(__file__).resolve().parents[1] / "data" / "glp1_health.duckdb"
+import os as _os
+DB_PATH = Path(_os.environ["DASHBOARD_DB_PATH"]) if "DASHBOARD_DB_PATH" in _os.environ else Path(__file__).resolve().parents[1] / "data" / "glp1_health.duckdb"
 
 st.set_page_config(page_title="GLP-1 × Urban Health", layout="wide")
 st.title("GLP-1 Drug Approvals × US Obesity Trends")

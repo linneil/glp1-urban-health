@@ -26,7 +26,9 @@ if not DB_PATH.exists():
         st.error(f"❌ Error building database: {e}")
         st.stop()
 
-# If we get here, database exists — run the dashboard
-if __name__ == "__main__":
-    # Import and run dashboard
-    exec(open(Path(__file__).parent / "dashboard" / "app.py").read())
+# Pass DB path to dashboard via env var so path resolution works regardless of how it's invoked
+os.environ["DASHBOARD_DB_PATH"] = str(DB_PATH)
+
+# Run the dashboard (exec shares this module's globals, so __file__ would be wrong;
+# we use the env var above to pass the correct path)
+exec(open(Path(__file__).parent / "dashboard" / "app.py").read())
